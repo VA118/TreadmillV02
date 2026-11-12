@@ -1,3 +1,4 @@
+
 name: Build TreadmillVO2
 
 on:
@@ -14,18 +15,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: xcodegen generate --spec project.yml
+
+      - name: Show project targets
+        run: |
+          xcodebuild -list -project TreadmillVO2.xcodeproj
+
+      - name: Build Apple Watch app
+        run: |
+          xcodebuild \
+            -project TreadmillVO2.xcodeproj \
+            -target TreadmillVO2Watch \
+            -configuration Debug \
+            -sdk watchsimulator \
+            CODE_SIGNING_ALLOWED=NO \
+            build
 
       - name: Build iPhone app
         run: |
           xcodebuild \
             -project TreadmillVO2.xcodeproj \
-            -target TreadmillVO2 \
+            -scheme TreadmillVO2 \
             -configuration Debug \
-            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
