@@ -22,8 +22,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.treadmillvo2.app
         GENERATE_INFOPLIST_FILE: YES
         TARGETED_DEVICE_FAMILY: "1"
-    dependencies:
-      - target: TreadmillVO2Watch
+    
 
   TreadmillVO2Watch:
     type: application
