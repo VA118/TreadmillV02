@@ -49,3 +49,25 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Package iPhone IPA
+        run: |
+          xcodebuild \
+            -project TreadmillVO2.xcodeproj \
+            -scheme TreadmillVO2 \
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/vo2-build" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+          mkdir -p Payload
+          cp -R "$RUNNER_TEMP/vo2-build/Build/Products/Debug-iphoneos/TreadmillVO2.app" Payload/
+          zip -qr TreadmillVO2.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TreadmillVO2-IPA
+          path: TreadmillVO2.ipa
