@@ -24,7 +24,7 @@ jobs:
         run: |
           xcodebuild \
             -project TreadmillVO2.xcodeproj \
-            -scheme TreadmillVO2 \
+            -target TreadmillVO2 \
             -configuration Debug \
             -sdk iphonesimulator \
             CODE_SIGNING_ALLOWED=NO \
