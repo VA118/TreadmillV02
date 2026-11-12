@@ -3,7 +3,7 @@ name: TreadmillVO2
 options:
   bundleIdPrefix: com.treadmillvo2
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
     watchOS: "9.0"
 
 settings:
