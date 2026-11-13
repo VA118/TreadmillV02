@@ -129,77 +129,263 @@ import WatchConnectivity
 }
 struct PhoneHomeView: View {
     @StateObject private var model = PhoneRunModel()
+    private let background = Color(red: 0.045, green: 0.05, blue: 0.065)
+    private let panel = Color(red: 0.095, green: 0.105, blue: 0.125)
+    private let accent = Color(red: 0.80, green: 0.13, blue: 0.17)
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("10K training") {
-                    Picker("Session", selection: $model.selected) {
-                        ForEach(TrainingLibrary.sessions) { s in
-                            Text(s.title).tag(s.id)
-                        }
-                    }
-                    Text("Session \(model.selected) of 42")
-                    Text("Elapsed: \(model.seconds / 60)m \(model.seconds % 60)s")
-                    Text(model.clock.active.map { "\($0.kind.rawValue.capitalized) — \($0.remaining)s left" } ?? "Complete")
-                    HStack {
-                        Button(model.running ? "Pause" : "Start / Resume") { model.startPause() }
-                        Button("Reset") { model.reset() }
-                    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    workoutCard
+                    treadmillCard
+                    forestCard
+                    historyCard
+                    Text("TREADMILLVO2  •  TRAIN WITH PURPOSE")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .tracking(2)
+                        .foregroundStyle(.gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                 }
-                Section("Treadmill") {
-                    HStack {
-                        Text("Speed (km/h)")
-                        Spacer()
-                        TextField("Speed", value: $model.speedKmh, format: .number)
-                            .keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                    }
-                    Picker("Units", selection: $model.units) {
-                        ForEach(UnitPreference.allCases) { Text($0.rawValue.capitalized).tag($0) }
-                    }
-                    Text("Distance: \(model.units.distance(model.accumulatedDistanceKm), specifier: "%.2f") \(model.units.distanceLabel)")
-                    if let pace = RunEstimate.paceMinutesPerKm(speedKmh: model.speedKmh) {
-                        Text("Pace: \(model.units.pace(pace), specifier: "%.2f") min/\(model.units.distanceLabel)")
-                    }
-                    Text("Distance is calculated from the manually entered treadmill speed, not read from the machine.")
-                        .font(.caption)
-                }
-                Section("Forest mode") {
-                    Toggle("Forest scenery", isOn: $model.forest)
-                    if model.forest {
-                        ForestPlayerView(filename: model.videoName)
-                        TextField("Bundled video filename (without .mp4)", text: $model.videoName)
-                        Text("To play offline, add a properly licensed forest.mp4 to the iPhone app target and enter forest.")
-                            .font(.caption)
-                    }
-                    Toggle("Brief neutral interval voice cues", isOn: $model.voiceCues)
-                    Toggle("Keep motivation private", isOn: $model.privateMotivation)
-                    Toggle("Enable motivational buttons", isOn: $model.motivationEnabled)
-                    Toggle("Disable motivational audio", isOn: $model.silentMotivation)
-                    if !model.forest {
-                        HStack {
-                            Button("Motivate Me") { model.motivate("motivate") }
-                            Button("Push Me") { model.motivate("push") }
-                        }
-                    }
-                    if !model.motivationStatus.isEmpty { Text(model.motivationStatus).font(.caption) }
-                }
-                Section("After your run") {
-                    TextField("Treadmill final distance (optional, in selected units)", text: $model.treadmillFinalDistance)
-                        .keyboardType(.decimalPad)
-                    Button("Save run") { model.saveRun() }
-                    if !model.saveMessage.isEmpty { Text(model.saveMessage).font(.caption) }
-                    ForEach(model.savedRuns.prefix(5)) { run in
-                        Text("Workout \(run.workoutNumber): \(model.units.distance(run.finalDistanceKm), specifier: "%.2f") \(model.units.distanceLabel)")
-                    }
-                    Text("Estimated VO₂ max: unavailable. A scientifically defensible per-treadmill-run VO₂ max estimate needs a validated model and calibration. This app does not invent a number.")
-                        .font(.caption)
-                }
-            }.navigationTitle("TreadmillVO2")
+                .padding(18)
+            }
+            .background(background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
             .preferredColorScheme(.dark)
-            .tint(.red)
+            .tint(accent)
         }
     }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "figure.run")
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(accent)
+                Text("TREADMILL")
+                    .foregroundStyle(.white)
+                Text("VO2")
+                    .foregroundStyle(accent)
+                Spacer()
+                Text("TRAINING / 01")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.gray)
+            }
+            .font(.system(size: 23, weight: .black, design: .rounded))
+            Rectangle().fill(accent).frame(width: 44, height: 3)
+            Text("YOUR PERFORMANCE. YOUR PROGRESS.")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(.gray)
+        }
+        .padding(.bottom, 4)
+    }
+
+    private var workoutCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 16) {
+                sectionHeading("10K TRAINING", symbol: "figure.run.circle")
+                Picker("Training session", selection: $model.selected) {
+                    ForEach(TrainingLibrary.sessions) { session in
+                        Text(session.title).tag(session.id)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Text("SESSION \(model.selected) OF 42")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(.gray)
+                Text(String(format: "%02d:%02d", model.seconds / 60, model.seconds % 60))
+                    .font(.system(size: 62, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                Text(model.clock.active.map { "\($0.kind.rawValue.uppercased())  •  \($0.remaining) SEC REMAINING" } ?? "SESSION COMPLETE")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .foregroundStyle(accent)
+                    .frame(maxWidth: .infinity)
+                HStack(spacing: 10) {
+                    Button(action: { model.startPause() }) {
+                        Label(model.running ? "PAUSE" : "START / RESUME", systemImage: model.running ? "pause.fill" : "play.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(WorkoutButtonStyle(color: accent))
+                    Button(action: { model.reset() }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .frame(width: 46, height: 24)
+                    }
+                    .buttonStyle(WorkoutButtonStyle(color: Color(white: 0.22)))
+                    .accessibilityLabel("Reset workout")
+                }
+            }
+        }
+    }
+
+    private var treadmillCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 16) {
+                sectionHeading("TREADMILL", symbol: "speedometer")
+                HStack {
+                    Text("SPEED  •  KM/H")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.gray)
+                    Spacer()
+                    TextField("Speed", value: $model.speedKmh, format: .number)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .frame(width: 100)
+                }
+                Divider().overlay(Color.white.opacity(0.08))
+                Picker("Units", selection: $model.units) {
+                    ForEach(UnitPreference.allCases) { unit in
+                        Text(unit.rawValue.capitalized).tag(unit)
+                    }
+                }
+                .pickerStyle(.segmented)
+                HStack(spacing: 12) {
+                    metric("DISTANCE", value: String(format: "%.2f", model.units.distance(model.accumulatedDistanceKm)), unit: model.units.distanceLabel)
+                    if let pace = RunEstimate.paceMinutesPerKm(speedKmh: model.speedKmh) {
+                        metric("PACE", value: String(format: "%.2f", model.units.pace(pace)), unit: "min/\(model.units.distanceLabel)")
+                    } else {
+                        metric("PACE", value: "--", unit: "min/\(model.units.distanceLabel)")
+                    }
+                }
+                Text("Distance is estimated from the speed you enter, not read directly from your treadmill.")
+                    .font(.caption)
+                    .foregroundStyle(.gray)
+            }
+        }
+    }
+
+    private var forestCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 13) {
+                sectionHeading("EXPERIENCE & AUDIO", symbol: "waveform")
+                Toggle("Forest scenery", isOn: $model.forest)
+                if model.forest {
+                    ForestPlayerView(filename: model.videoName)
+                    TextField("Bundled video filename (without .mp4)", text: $model.videoName)
+                        .textFieldStyle(.roundedBorder)
+                    Text("Offline video requires a properly licensed MP4 bundled with the iPhone app.")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                }
+                Toggle("Neutral interval voice cues", isOn: $model.voiceCues)
+                Toggle("Keep motivation private", isOn: $model.privateMotivation)
+                Toggle("Enable motivation buttons", isOn: $model.motivationEnabled)
+                Toggle("Disable motivational audio", isOn: $model.silentMotivation)
+                if !model.forest {
+                    HStack(spacing: 10) {
+                        Button("MOTIVATE ME") { model.motivate("motivate") }
+                        Button("PUSH ME") { model.motivate("push") }
+                    }
+                    .font(.system(size: 12, weight: .bold))
+                    .buttonStyle(.bordered)
+                }
+                if !model.motivationStatus.isEmpty {
+                    Text(model.motivationStatus).font(.caption).foregroundStyle(.gray)
+                }
+            }
+            .toggleStyle(SwitchToggleStyle(tint: accent))
+        }
+    }
+
+    private var historyCard: some View {
+        card {
+            VStack(alignment: .leading, spacing: 14) {
+                sectionHeading("AFTER YOUR RUN", symbol: "chart.xyaxis.line")
+                TextField("Final treadmill distance (optional)", text: $model.treadmillFinalDistance)
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(.roundedBorder)
+                Button("SAVE RUN") { model.saveRun() }
+                    .buttonStyle(WorkoutButtonStyle(color: accent))
+                if !model.saveMessage.isEmpty {
+                    Text(model.saveMessage).font(.caption).foregroundStyle(.gray)
+                }
+                if !model.savedRuns.isEmpty {
+                    Text("RECENT RUNS")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.gray)
+                    ForEach(model.savedRuns.prefix(5)) { run in
+                        HStack {
+                            Text("Workout \(run.workoutNumber)")
+                            Spacer()
+                            Text(String(format: "%.2f %@", model.units.distance(run.finalDistanceKm), model.units.distanceLabel))
+                                .monospacedDigit()
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                Divider().overlay(Color.white.opacity(0.08))
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "waveform.path.ecg")
+                        .foregroundStyle(accent)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("VO₂ MAX  •  COMING LATER")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        Text("A reliable treadmill VO₂ max estimate requires a validated model and calibration. No number is invented.")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                    }
+                }
+            }
+        }
+    }
+
+    private func sectionHeading(_ title: String, symbol: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol).foregroundStyle(accent)
+            Text(title)
+                .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                .tracking(1.4)
+                .foregroundStyle(.white)
+            Spacer()
+        }
+    }
+
+    private func metric(_ title: String, value: String, unit: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(.gray)
+            Text(value)
+                .font(.system(size: 29, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            Text(unit).font(.caption2).foregroundStyle(.gray)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(13)
+        .background(Color.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(panel, in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.white.opacity(0.07), lineWidth: 1))
+    }
 }
+
+private struct WorkoutButtonStyle: ButtonStyle {
+    let color: Color
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white)
+            .padding(.vertical, 15)
+            .padding(.horizontal, 16)
+            .background(color.opacity(configuration.isPressed ? 0.7 : 1), in: RoundedRectangle(cornerRadius: 11))
+    }
+}
+
 struct ForestPlayerView: View {
     let filename: String
     @State private var player: AVPlayer?
