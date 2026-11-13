@@ -195,6 +195,8 @@ struct PhoneHomeView: View {
                         .font(.caption)
                 }
             }.navigationTitle("TreadmillVO2")
+            .preferredColorScheme(.dark)
+            .tint(.red)
         }
     }
 }
